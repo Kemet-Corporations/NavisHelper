@@ -25,6 +25,7 @@ builder.Services.AddSingleton<ScenarioLibraryService>();
 builder.Services.AddSingleton<NavisworksToolContext>();
 builder.Services
     .AddMcpServer(options => options.ServerInstructions = McpServerInstructions.Text)
+    .WithMessageFilters(filters => filters.AddIncomingFilter(McpClientIdentityFilter.Create))
     .WithRequestFilters(filters =>
     {
         filters.AddListToolsFilter(readOnlyMode.FilterList);
