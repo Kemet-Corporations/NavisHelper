@@ -32,7 +32,7 @@ RestartApplications=no
 CloseApplications=no
 UsePreviousAppDir=no
 UsePreviousGroup=no
-Uninstallable=no
+; The smoke uninstalls through {app}\unins000.exe; no Apps & Features entry is written.
 CreateUninstallRegKey=no
 #else
 CloseApplications=yes
@@ -79,13 +79,18 @@ Filename: "{app}\McpConfigurator\NavisHelper.McpConfigurator.exe"; Parameters: "
 #endif
 
 [UninstallRun]
+#ifndef InstallerSmokeTest
 Filename: "{app}\McpConfigurator\NavisHelper.McpConfigurator.exe"; Parameters: "--remove --clients all"; Flags: runhidden skipifdoesntexist; RunOnceId: "RemoveNavisHelperMcpClients"
+#endif
 
 [UninstallDelete]
 Type: filesandordirs; Name: "{#BundleInstallDir}"
 Type: filesandordirs; Name: "{app}\versions"
 
 [Code]
+var
+  McpServerActivationFailed: Boolean;
+
 procedure CurStepChanged(CurStep: TSetupStep);
 var
   ResultCode: Integer;
@@ -101,8 +106,21 @@ begin
     if Installed then
       DelTree(ExpandConstant('{app}\McpServerPayload'), True, True, True)
     else
-      MsgBox(ExpandConstant('{cm:McpServerActivationFailed}'), mbError, MB_OK);
+    begin
+      McpServerActivationFailed := True;
+      { A plain MsgBox ignores /SUPPRESSMSGBOXES and blocks a silent install forever. }
+      SuppressibleMsgBox(ExpandConstant('{cm:McpServerActivationFailed}'), mbError, MB_OK, IDOK);
+    end;
   end;
+end;
+
+{ /SUPPRESSMSGBOXES hides the failure message; the exit code still reports it. }
+function GetCustomSetupExitCode(): Integer;
+begin
+  if McpServerActivationFailed then
+    Result := 100
+  else
+    Result := 0;
 end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
