@@ -138,6 +138,22 @@ namespace NavisHelper.Agent.Contracts
 
     public static class ModelColorSchemeRuleMatcher
     {
+        public static string DescribeAppearanceError(ModelColorSchemeRule rule)
+        {
+            if (rule == null ||
+                (string.IsNullOrWhiteSpace(rule.ColorHex) && !rule.Transparency.HasValue))
+                return "requires colorHex, transparency, or both.";
+
+            if (rule.Transparency.HasValue &&
+                (float.IsNaN(rule.Transparency.Value) ||
+                 float.IsInfinity(rule.Transparency.Value) ||
+                 rule.Transparency.Value < 0 ||
+                 rule.Transparency.Value > 1))
+                return "transparency must be finite and between 0 and 1.";
+
+            return null;
+        }
+
         public static bool HasMatchers(ModelColorSchemeRule rule)
         {
             return rule != null &&
@@ -167,7 +183,7 @@ namespace NavisHelper.Agent.Contracts
                 return true;
 
             if (!MatchesContains(item.Name, rule.NameContains) ||
-                (HasValues(rule.PathContains) && !MatchesContains(item.Path, rule.PathContains)) ||
+                (HasValues(rule.PathContains) && !MatchesContains(item.Path, rule.PathContains, true)) ||
                 !MatchesContains(item.SourceFile, rule.SourceFileContains))
             {
                 return false;
@@ -215,15 +231,27 @@ namespace NavisHelper.Agent.Contracts
             };
         }
 
-        private static bool MatchesContains(string value, IEnumerable<string> filters)
+        private static string NormalizePathFilter(string filter)
+        {
+            if (filter == null || filter.IndexOf('/') < 0)
+                return filter == null ? null : filter.Trim();
+
+            return string.Join("/", filter.Split('/').Select(part => part.Trim()));
+        }
+
+        private static bool MatchesContains(string value, IEnumerable<string> filters, bool normalizePath = false)
         {
             if (!HasValues(filters))
                 return true;
 
             var text = value ?? string.Empty;
+            // A path filter matches as written first: node names may themselves contain
+            // " / ". Only then is it retried with the separators collapsed to "/".
             return filters.Any(filter =>
                 !string.IsNullOrWhiteSpace(filter) &&
-                text.IndexOf(filter.Trim(), StringComparison.OrdinalIgnoreCase) >= 0);
+                (text.IndexOf(filter.Trim(), StringComparison.OrdinalIgnoreCase) >= 0 ||
+                 (normalizePath &&
+                  text.IndexOf(NormalizePathFilter(filter), StringComparison.OrdinalIgnoreCase) >= 0)));
         }
 
         private static bool HasValues(IEnumerable<string> values)
