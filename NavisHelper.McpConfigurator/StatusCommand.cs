@@ -51,7 +51,7 @@ internal static partial class Program
 
             var path = adapter.ConfigPath ?? "";
             if (adapter.Id == "claude-desktop" &&
-                ClaudeDesktopStaleEntry.ExtensionInstalled(Path.Combine(appData, "Claude", "Claude Extensions")))
+                ClaudeDesktopStaleEntry.ExtensionInstalled(Path.Combine(ClaudeDesktopRoot(appData), "Claude Extensions")))
                 return ("yes", "extension", path);
 
             var state = adapter.Id switch

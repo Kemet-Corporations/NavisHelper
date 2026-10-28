@@ -81,7 +81,7 @@ internal static partial class Program
             if (options.Configure)
             {
                 var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-                var extensionsRoot = Path.Combine(appData, "Claude", "Claude Extensions");
+                var extensionsRoot = Path.Combine(ClaudeDesktopRoot(appData), "Claude Extensions");
                 foreach (var adapter in selected)
                 {
                     try
@@ -103,7 +103,7 @@ internal static partial class Program
                 try
                 {
                     var result = ClaudeDesktopStaleEntry.RemoveIfExtensionInstalled(
-                        Path.Combine(appData, "Claude", "claude_desktop_config.json"), extensionsRoot, options.DryRun);
+                        Path.Combine(ClaudeDesktopRoot(appData), "claude_desktop_config.json"), extensionsRoot, options.DryRun);
                     if (result.Status is "removed" or "dry-run")
                     {
                         Console.WriteLine($"claude-desktop: {result.Status} - {result.Detail}");
@@ -236,8 +236,8 @@ internal static partial class Program
             new GenericMcpServersJsonAdapter(
                 "claude-desktop",
                 "Claude Desktop",
-                Path.Combine(appData, "Claude", "claude_desktop_config.json"),
-                Path.Combine(appData, "Claude")),
+                Path.Combine(ClaudeDesktopRoot(appData), "claude_desktop_config.json"),
+                ClaudeDesktopRoot(appData)),
             new ClaudeCodeCliAdapter(),
             new CodexTomlAdapter(Path.Combine(userProfile, ".codex", "config.toml"), Path.Combine(userProfile, ".codex")),
             new GenericMcpServersJsonAdapter(

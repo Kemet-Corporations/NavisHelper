@@ -75,6 +75,36 @@ internal static partial class Program
     }
 
     /// <summary>
+    /// Claude Desktop's settings folder. The Microsoft Store (MSIX) version keeps its own private
+    /// copy of %APPDATA%\Claude under %LOCALAPPDATA%\Packages\Claude_*\LocalCache\Roaming\Claude and
+    /// reads that one first, so an entry written to %APPDATA%\Claude is never seen. When that folder
+    /// exists it is used (the most recently written one if there are several); otherwise %APPDATA%\Claude
+    /// (installer version, or a Store version that has not saved settings yet and still reads %APPDATA%).
+    /// Same rule as Kemet's Revit MCP (McpClients.ClaudeDesktopDir), but Store-first.
+    /// </summary>
+    internal static string ClaudeDesktopRoot(string appData)
+    {
+        var standard = Path.Combine(appData, "Claude");
+        try
+        {
+            var packages = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Packages");
+            if (!Directory.Exists(packages))
+                return standard;
+            var store = Directory.EnumerateDirectories(packages, "Claude_*")
+                .Select(package => Path.Combine(package, "LocalCache", "Roaming", "Claude"))
+                .Where(Directory.Exists)
+                .OrderByDescending(Directory.GetLastWriteTimeUtc)
+                .FirstOrDefault();
+            return store ?? standard;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return standard;
+        }
+    }
+
+    /// <summary>
     /// Antigravity 2.x (IDE and CLI) uses ~/.gemini/config/mcp_config.json. The first release
     /// used ~/.gemini/antigravity/mcp_config.json; that folder survives the upgrade, so it is
     /// used only when the 2.x folder is absent.
