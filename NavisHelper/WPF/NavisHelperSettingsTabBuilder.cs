@@ -142,19 +142,15 @@ namespace NavisHelper.WPF
         public TabItem Build()
         {
             var stack = new StackPanel { Margin = new Thickness(8) };
-            stack.Children.Add(BuildLocalizedSection("AI", BuildAiSettingsSection()));
+            // Kemet fork: the OpenRouter AI section is built (other code reads ModelCombo) but not shown;
+            // Kemet connects AI apps through MCP instead. Language and About are hidden too.
+            BuildAiSettingsSection();
             _protectedModeSection = new ProtectedModeSection(_bindings, _dispatcher, _setStatusResource);
             stack.Children.Add(BuildLocalizedSection(
                 "Settings_ProtectedMode_Section", _protectedModeSection.Build()));
             stack.Children.Add(BuildLocalizedSection(
                 "Settings_Service_Section",
                 BuildServiceSection()));
-            stack.Children.Add(BuildLocalizedSection(
-                "SettingsLanguageSectionTitle",
-                BuildLanguageSettingsSection()));
-            stack.Children.Add(BuildLocalizedSection(
-                "Settings_About_Section",
-                BuildAboutSection()));
 
             var tab = new TabItem
             {

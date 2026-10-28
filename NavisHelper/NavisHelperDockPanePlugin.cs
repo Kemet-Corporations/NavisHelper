@@ -8,8 +8,8 @@ using NavisHelper.WPF;
 namespace NavisHelper
 {
     [Plugin("NavisHelperDockPane", "CBC",
-        DisplayName = "NavisHelper",
-        ToolTip = "Панель инструментов NavisHelper")]
+        DisplayName = "Kemet - Helper",
+        ToolTip = "Kemet - Helper: model, colours, views and clash tools")]
     [DockPanePlugin(400, 600, FixedSize = false, AutoScroll = true)]
     public class NavisHelperDockPanePlugin : DockPanePlugin
     {

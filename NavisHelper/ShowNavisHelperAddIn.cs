@@ -11,7 +11,9 @@ namespace NavisHelper
     /// </summary>
     [Plugin("NavisHelperShowPanel", "CBC", DisplayName = "NavisHelper",
         ToolTip = "Show or hide the NavisHelper panel")]
-    [AddInPlugin(AddInLocation.AddIn,
+    // Kemet fork: AddInLocation.None - no button anywhere in Navisworks' ribbon. The panel is
+    // opened from the "Helper" button on the Kemet Navis Addons tab.
+    [AddInPlugin(AddInLocation.None,
         Icon = "icons\\NavisHelperAddIn_16.png",
         LargeIcon = "icons\\NavisHelperAddIn_32.png")]
     public class ShowNavisHelperAddIn : AddInPlugin

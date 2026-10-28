@@ -765,7 +765,7 @@ Keeps only geometric objects on the lowest level.</value>
     <value>🌳 Model</value>
   </data>
   <data name="Panel_Tab_Settings" xml:space="preserve">
-    <value>⚙ Settings</value>
+    <value>🛡 Safety</value>
   </data>
   <data name="Panel_Tab_Views" xml:space="preserve">
     <value>📷 Views</value>

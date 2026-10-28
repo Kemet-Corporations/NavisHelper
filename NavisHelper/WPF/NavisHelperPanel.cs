@@ -359,19 +359,10 @@ namespace NavisHelper.WPF
         private TabItem CreateColorsTab()
         {
             var manual = WrapInScroll(CreateToolsContent());
-            var ai = CreateAIColorsContent();
-
-            RadioButton[] segmentButtons;
-            var content = UiTheme.Segmented(
-                new[] { PanelUi("Panel_Colors_Segment_Manual"), "AI" },
-                new UIElement[] { manual, ai },
-                _panelUiSettings.ColorsSegment,
-                idx => { _panelUiSettings.ColorsSegment = idx; _panelUiSettings.Save(); },
-                out _selectColorsSegment,
-                out segmentButtons);
-            _panelLocalizationBindings.BindContent(
-                segmentButtons[0],
-                "Panel_Colors_Segment_Manual");
+            // Kemet fork: the OpenRouter "AI" colouring segment is not shown. Its content is still
+            // created because other panel code holds references to its controls.
+            CreateAIColorsContent();
+            UIElement content = manual;
 
             _colorsTab = new TabItem
             {

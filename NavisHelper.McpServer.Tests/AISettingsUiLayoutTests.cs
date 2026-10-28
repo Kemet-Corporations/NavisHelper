@@ -6,8 +6,10 @@ namespace NavisHelper.McpServer.Tests;
 
 public sealed class AISettingsUiLayoutTests
 {
+    // Kemet fork: the tab ("Safety") shows only protected mode and the service card.
+    // The OpenRouter AI card is built but not added; language and About are not shown.
     [Fact]
-    public void SettingsCards_AreBuiltInRequestedOrder()
+    public void SettingsCards_KemetShowsOnlyProtectedModeAndService()
     {
         var source = SettingsBuilderSource();
         var build = MethodBody(
@@ -15,21 +17,13 @@ public sealed class AISettingsUiLayoutTests
             "public TabItem Build()",
             "private UIElement BuildLanguageSettingsSection()");
 
-        var ai = build.IndexOf(
-            "BuildLocalizedSection(\"AI\"",
-            StringComparison.Ordinal);
-        var service = build.IndexOf(
-            "\"Settings_Service_Section\"",
-            StringComparison.Ordinal);
-        var language = build.IndexOf(
-            "\"SettingsLanguageSectionTitle\"",
-            StringComparison.Ordinal);
-        var about = build.IndexOf(
-            "\"Settings_About_Section\"",
-            StringComparison.Ordinal);
+        var protectedMode = build.IndexOf("\"Settings_ProtectedMode_Section\"", StringComparison.Ordinal);
+        var service = build.IndexOf("\"Settings_Service_Section\"", StringComparison.Ordinal);
 
-        Assert.True(
-            ai >= 0 && service > ai && language > service && about > language);
+        Assert.True(protectedMode >= 0 && service > protectedMode);
+        Assert.DoesNotContain("BuildLocalizedSection(\"AI\"", build, StringComparison.Ordinal);
+        Assert.DoesNotContain("\"SettingsLanguageSectionTitle\"", build, StringComparison.Ordinal);
+        Assert.DoesNotContain("\"Settings_About_Section\"", build, StringComparison.Ordinal);
     }
 
     [Fact]
