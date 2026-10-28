@@ -22,6 +22,10 @@ internal static partial class Program
 
         try
         {
+            // Kemet fork: machine-readable client status for the Kemet Navis Addons window.
+            if (args.Length == 1 && args[0].Equals("--status", StringComparison.OrdinalIgnoreCase))
+                return StatusCommand.Run(StatusViews(BuildAdapters()), Console.Out);
+
             if (args.Any(arg => arg.Equals("--install-server", StringComparison.OrdinalIgnoreCase) ||
                 arg.Equals("--rollback-server", StringComparison.OrdinalIgnoreCase) ||
                 arg.Equals("--prune-servers", StringComparison.OrdinalIgnoreCase) ||
@@ -252,6 +256,19 @@ internal static partial class Program
                 "ZCode",
                 Path.Combine(userProfile, ".zcode", "cli", "config.json"),
                 Path.Combine(userProfile, ".zcode")),
+            // Kemet fork: the other AI apps Kemet uses (same list as Kemet's Revit MCP).
+            new VsCodeServersJsonAdapter(
+                Path.Combine(appData, "Code", "User", "mcp.json"),
+                Path.Combine(appData, "Code", "User")),
+            new GenericMcpServersJsonAdapter(
+                "windsurf",
+                "Windsurf",
+                Path.Combine(userProfile, ".codeium", "windsurf", "mcp_config.json"),
+                Path.Combine(userProfile, ".codeium", "windsurf")),
+            new GeminiCliJsonAdapter(
+                Path.Combine(userProfile, ".gemini", "settings.json"),
+                Path.Combine(userProfile, ".gemini")),
+            AntigravityAdapter(userProfile),
         };
     }
 
@@ -417,12 +434,13 @@ internal static partial class Program
         Console.WriteLine("  NavisHelper.McpConfigurator.exe --configure --clients all --create-missing --mcp-server \"%LOCALAPPDATA%\\NavisHelper\\McpServer-<version>\\NavisHelper.McpServer.exe\"");
         Console.WriteLine("  NavisHelper.McpConfigurator.exe --configure --clients claude-desktop,cursor,opencode --dry-run");
         Console.WriteLine("  NavisHelper.McpConfigurator.exe --remove --clients all");
+        Console.WriteLine("  NavisHelper.McpConfigurator.exe --status");
         Console.WriteLine("  NavisHelper.McpConfigurator.exe --install-server <sourceDir> [--install-root <dir>]");
         Console.WriteLine("  NavisHelper.McpConfigurator.exe --rollback-server [--install-root <dir>]");
         Console.WriteLine("  NavisHelper.McpConfigurator.exe --prune-servers [--install-root <dir>]");
         Console.WriteLine();
         Console.WriteLine("Client ids:");
-        Console.WriteLine("  claude-desktop, claude-code, codex, cursor, opencode, kimi, zcode");
+        Console.WriteLine("  claude-desktop, claude-code, codex, cursor, opencode, kimi, zcode, vscode, windsurf, gemini-cli, antigravity");
     }
 
 

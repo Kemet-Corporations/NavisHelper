@@ -34,6 +34,9 @@ internal static partial class Program
         protected string ConfigPath { get; }
         internal string ReadOnlyConfigPath => ConfigPath;
         protected string ClientRootPath { get; }
+        // Kemet fork: read by the --status report.
+        internal string Name => DisplayName;
+        internal virtual bool ClientInstalled => Directory.Exists(ClientRootPath);
 
         public virtual DetectionResult Detect()
         {

@@ -15,6 +15,8 @@ can be re-applied after pulling upstream.
 | Change | Files | Why |
 | --- | --- | --- |
 | The NavisHelper button moves from its own "NavisHelper" ribbon tab to Navisworks' **Tool Add-ins** tab. | `NavisHelper/ShowNavisHelperAddIn.cs` (new), `NavisHelper/RibbonLoader.cs` (no longer builds a tab), `NavisHelper/NavisHelper.csproj` (one `Compile` line), `NavisHelper.bundle/Contents/2026/icons/NavisHelperAddIn_16.png` and `_32.png` (copied to the other years at build) | Same pattern as Revit MCP: the engine's own button sits in the host's Add-ins tab; Kemet's buttons sit on the Kemet tab. No product-named ribbon tab. |
+| **Configurator `--status`**: one tab-separated line per AI app (id, name, installed, connected/not_connected/extension/unreadable, config path). Read-only. | `NavisHelper.McpConfigurator/StatusCommand.cs` (new), two accessors in `Program.FileAdapters.cs` / `Program.CliAdapters.cs`, one `if` in `Program.Main`, tests in `NavisHelper.McpServer.Tests/KemetStatusCommandTests.cs` | The Kemet window (.NET Framework) shows who is connected without its own JSON/TOML parsing. |
+| **Configurator: VS Code, Windsurf, Gemini CLI, Antigravity.** | `NavisHelper.McpConfigurator/KemetClientAdapters.cs` (new), four entries in `Program.BuildAdapters`, help text, the two `--clients` lists in `installer/NavisHelper.iss` (a test requires the installer to list every client) | Same AI apps Kemet already connects for Revit MCP. Writes reuse upstream's `FileAdapter`, so backups and untouched neighbours come for free. |
 
 ## Pulling upstream updates
 

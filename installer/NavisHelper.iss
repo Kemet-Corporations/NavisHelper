@@ -70,14 +70,14 @@ Source: "{#SourceDir}\NavisHelper.bundle\*"; DestDir: "{#BundleInstallDir}"; Fla
 
 [Icons]
 #ifndef InstallerSmokeTest
-Name: "{group}\{cm:ConfigureMcpShortcut}"; Filename: "{app}\McpConfigurator\NavisHelper.McpConfigurator.exe"; Parameters: "--configure --clients claude-code,codex,cursor,opencode,kimi,zcode --mcp-server ""{app}\McpServer\NavisHelper.McpServer.exe"""
+Name: "{group}\{cm:ConfigureMcpShortcut}"; Filename: "{app}\McpConfigurator\NavisHelper.McpConfigurator.exe"; Parameters: "--configure --clients claude-code,codex,cursor,opencode,kimi,zcode,vscode,windsurf,gemini-cli,antigravity --mcp-server ""{app}\McpServer\NavisHelper.McpServer.exe"""
 Name: "{group}\{cm:DetectMcpShortcut}"; Filename: "{app}\McpConfigurator\NavisHelper.McpConfigurator.exe"; Parameters: "--detect --mcp-server ""{app}\McpServer\NavisHelper.McpServer.exe"""
 Name: "{group}\{cm:ClaudeDesktopShortcut}"; Filename: "{app}\ClaudeDesktop"
 #endif
 
 [Run]
 #ifndef InstallerSmokeTest
-Filename: "{app}\McpConfigurator\NavisHelper.McpConfigurator.exe"; Parameters: "--configure --clients claude-code,codex,cursor,opencode,kimi,zcode --mcp-server ""{app}\McpServer\NavisHelper.McpServer.exe"""; Description: "{cm:ConfigureMcpClients}"; Flags: postinstall skipifsilent
+Filename: "{app}\McpConfigurator\NavisHelper.McpConfigurator.exe"; Parameters: "--configure --clients claude-code,codex,cursor,opencode,kimi,zcode,vscode,windsurf,gemini-cli,antigravity --mcp-server ""{app}\McpServer\NavisHelper.McpServer.exe"""; Description: "{cm:ConfigureMcpClients}"; Flags: postinstall skipifsilent
 #endif
 
 [UninstallRun]

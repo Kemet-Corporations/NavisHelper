@@ -19,6 +19,9 @@ internal static partial class Program
         public string Id { get; }
         protected string DisplayName { get; }
         protected string Executable { get; }
+        // Kemet fork: read by the --status report.
+        internal string Name => DisplayName;
+        internal string? ExecutablePath => FindExecutable(Executable);
 
         public DetectionResult Detect()
         {
