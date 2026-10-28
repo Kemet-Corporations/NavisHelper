@@ -712,6 +712,7 @@
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
     <Compile Include="RibbonLoader.cs" />
+    <Compile Include="ShowNavisHelperAddIn.cs" />
     <Compile Include="RibbonCommandMessages.cs" />
     <Compile Include="RunSaveClashReport.cs" />
     <Compile Include="SaveAsNavis2018.cs" />
