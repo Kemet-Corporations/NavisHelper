@@ -44,8 +44,8 @@ internal static partial class Program
             {
                 // `claude mcp add --scope user` writes the top-level "mcpServers" of ~/.claude.json.
                 var configPath = Path.Combine(userProfile, ".claude.json");
-                var installed = adapter.CliFound || File.Exists(configPath) ||
-                                Directory.Exists(Path.Combine(userProfile, ".claude"));
+                // Connecting runs the `claude` CLI, so only a CLI on PATH counts as installed.
+                var installed = adapter.CliFound;
                 return (installed ? "yes" : "no", HasJsonEntry(configPath, "mcpServers"), configPath);
             }
 
