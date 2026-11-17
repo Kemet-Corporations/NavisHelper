@@ -69,7 +69,8 @@ internal static partial class Program
             return new ConfigureResult("configured", $"{DisplayName} now has MCP server '{ServerName}'.", backupPath);
         }
 
-        public ConfigureResult Remove(bool dryRun)
+        // Kemet fork: virtual so Claude Desktop can also clean its other settings folders.
+        public virtual ConfigureResult Remove(bool dryRun)
         {
             if (!File.Exists(ConfigPath))
                 return new ConfigureResult("skipped", $"{DisplayName} config was not found.");

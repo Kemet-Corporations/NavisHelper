@@ -233,11 +233,10 @@ internal static partial class Program
 
         return new IMcpClientAdapter[]
         {
-            new GenericMcpServersJsonAdapter(
-                "claude-desktop",
-                "Claude Desktop",
-                Path.Combine(ClaudeDesktopRoot(appData), "claude_desktop_config.json"),
-                ClaudeDesktopRoot(appData)),
+            // Kemet fork: every Claude Desktop settings folder (Store new/old, installer).
+            new ClaudeDesktopAdapter(
+                ClaudeDesktopDirs(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), appData),
+                Path.Combine(appData, "Claude")),
             new ClaudeCodeCliAdapter(),
             new CodexTomlAdapter(Path.Combine(userProfile, ".codex", "config.toml"), Path.Combine(userProfile, ".codex")),
             new GenericMcpServersJsonAdapter(
