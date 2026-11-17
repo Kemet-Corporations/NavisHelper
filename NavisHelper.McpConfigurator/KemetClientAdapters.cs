@@ -74,34 +74,170 @@ internal static partial class Program
         }
     }
 
+    internal const string ClaudeDesktopConfigName = "claude_desktop_config.json";
+
     /// <summary>
-    /// Claude Desktop's settings folder. The Microsoft Store (MSIX) version keeps its own private
-    /// copy of %APPDATA%\Claude under %LOCALAPPDATA%\Packages\Claude_*\LocalCache\Roaming\Claude and
-    /// reads that one first, so an entry written to %APPDATA%\Claude is never seen. When that folder
-    /// exists it is used (the most recently written one if there are several); otherwise %APPDATA%\Claude
-    /// (installer version, or a Store version that has not saved settings yet and still reads %APPDATA%).
-    /// Same rule as Kemet's Revit MCP (McpClients.ClaudeDesktopDir), but Store-first.
+    /// Every Claude Desktop settings folder that exists, the one Claude most likely reads first.
+    /// Claude Desktop keeps its config in a different place depending on how and when it was installed:
+    ///   1. Microsoft Store, new builds (Nov 2026): %LOCALAPPDATA%\Claude-Data\claude_&lt;id&gt;
+    ///   2. Regular installer:                     %APPDATA%\Claude
+    ///   3. Microsoft Store, older builds:          %LOCALAPPDATA%\Packages\Claude_&lt;id&gt;\LocalCache\Roaming\Claude
+    /// Folder 3 survives the Store update to layout 1, so it must not win over 1. Within 1 and 3 the
+    /// folder whose config was written last comes first. Same rule as Kemet's Revit MCP
+    /// (Kemet-Revit-Addons PR #40, McpClients.ClaudeDesktopDirs).
     /// </summary>
-    internal static string ClaudeDesktopRoot(string appData)
+    internal static List<string> ClaudeDesktopDirs(string localAppData, string appData)
     {
-        var standard = Path.Combine(appData, "Claude");
+        var dirs = new List<string>();
+        void Add(string dir)
+        {
+            if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir) &&
+                !dirs.Contains(dir, StringComparer.OrdinalIgnoreCase))
+                dirs.Add(dir);
+        }
+
         try
         {
-            var packages = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Packages");
-            if (!Directory.Exists(packages))
-                return standard;
-            var store = Directory.EnumerateDirectories(packages, "Claude_*")
-                .Select(package => Path.Combine(package, "LocalCache", "Roaming", "Claude"))
-                .Where(Directory.Exists)
-                .OrderByDescending(Directory.GetLastWriteTimeUtc)
-                .FirstOrDefault();
-            return store ?? standard;
+            var data = Path.Combine(localAppData ?? "", "Claude-Data");
+            if (!string.IsNullOrEmpty(localAppData) && Directory.Exists(data))
+                foreach (var dir in Directory.GetDirectories(data, "claude_*").OrderByDescending(ClaudeDirLastUsed))
+                    Add(dir);
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+
+        if (!string.IsNullOrEmpty(appData))
+            Add(Path.Combine(appData, "Claude"));
+
+        try
         {
-            return standard;
+            var packages = Path.Combine(localAppData ?? "", "Packages");
+            if (!string.IsNullOrEmpty(localAppData) && Directory.Exists(packages))
+                foreach (var dir in Directory.GetDirectories(packages, "Claude_*")
+                             .Select(package => Path.Combine(package, "LocalCache", "Roaming", "Claude"))
+                             .Where(Directory.Exists)
+                             .OrderByDescending(ClaudeDirLastUsed))
+                    Add(dir);
         }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+
+        return dirs;
+    }
+
+    private static DateTime ClaudeDirLastUsed(string dir)
+    {
+        try
+        {
+            var config = Path.Combine(dir, ClaudeDesktopConfigName);
+            return File.Exists(config) ? File.GetLastWriteTimeUtc(config) : Directory.GetLastWriteTimeUtc(dir);
+        }
+        catch { return DateTime.MinValue; }
+    }
+
+    private static string LocalAppData =>
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+
+    /// <summary>
+    /// The Claude Desktop folder Claude most likely reads (first of <see cref="ClaudeDesktopDirs"/>), or
+    /// %APPDATA%\Claude when none exists. Decides "connected" and where the .mcpb extension is looked for.
+    /// </summary>
+    internal static string ClaudeDesktopRoot(string appData) =>
+        ClaudeDesktopDirs(LocalAppData, appData).FirstOrDefault() ?? Path.Combine(appData, "Claude");
+
+    /// <summary>
+    /// Claude Desktop: "mcpServers" in claude_desktop_config.json, written to every settings folder that
+    /// exists (see <see cref="ClaudeDesktopDirs"/>). The first folder is the main one: it decides success
+    /// and the "connected" state. The others are best effort, so a stale copy never fails a Connect.
+    /// The file also holds Claude's own keys ("preferences", "coworkUserFilesPath"): only
+    /// mcpServers.navishelper is changed, every copy is backed up first and must parse after writing.
+    /// </summary>
+    private sealed class ClaudeDesktopAdapter : FileAdapter
+    {
+        private readonly IReadOnlyList<string> _otherConfigs;
+
+        public ClaudeDesktopAdapter(IReadOnlyList<string> dirs, string fallbackDir)
+            : base("claude-desktop", "Claude Desktop",
+                Path.Combine(dirs.Count > 0 ? dirs[0] : fallbackDir, ClaudeDesktopConfigName),
+                dirs.Count > 0 ? dirs[0] : fallbackDir)
+        {
+            _otherConfigs = dirs.Skip(1).Select(dir => Path.Combine(dir, ClaudeDesktopConfigName)).ToList();
+        }
+
+        protected override void ConfigureFile(string mcpServerPath)
+        {
+            SetEntry(ConfigPath, mcpServerPath);
+            foreach (var other in _otherConfigs)
+            {
+                try
+                {
+                    BackupIfExists(other);
+                    SetEntry(other, mcpServerPath);
+                    Console.WriteLine($"  also: {other}");
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"  note: could not also update {other}: {ex.Message}");
+                }
+            }
+        }
+
+        protected override bool RemoveFileEntry() => RemoveEntry(ConfigPath);
+
+        /// <summary>Removes the entry from the main file and from every other copy.</summary>
+        public override ConfigureResult Remove(bool dryRun)
+        {
+            var result = base.Remove(dryRun);
+            if (dryRun)
+                return result;
+
+            var removedElsewhere = false;
+            foreach (var other in _otherConfigs)
+            {
+                try
+                {
+                    if (!File.Exists(other) || !HasEntry(other))
+                        continue;
+                    BackupIfExists(other);
+                    if (RemoveEntry(other))
+                    {
+                        removedElsewhere = true;
+                        Console.WriteLine($"  also removed: {other}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine($"  note: could not also update {other}: {ex.Message}");
+                }
+            }
+
+            return result.Status == "skipped" && removedElsewhere
+                ? new ConfigureResult("removed", $"{DisplayName} no longer has MCP server '{ServerName}'.", result.BackupPath)
+                : result;
+        }
+
+        private static void SetEntry(string path, string mcpServerPath)
+        {
+            var root = ReadJsonObject(path);
+            var servers = EnsureObject(root, "mcpServers");
+            var server = EnsureObject(servers, ServerName);
+            server["command"] = mcpServerPath;
+            server["args"] = new JsonArray();
+            WriteJson(path, root);
+            if (!HasEntry(path))
+                throw new InvalidDataException($"{path} did not contain '{ServerName}' after writing.");
+        }
+
+        private static bool RemoveEntry(string path)
+        {
+            var root = ReadJsonObject(path);
+            if (root["mcpServers"] is not JsonObject servers || !servers.Remove(ServerName))
+                return false;
+            WriteJson(path, root);
+            ReadJsonObject(path);   // must still parse
+            return true;
+        }
+
+        private static bool HasEntry(string path) =>
+            ReadJsonObject(path)["mcpServers"] is JsonObject servers && servers.ContainsKey(ServerName);
     }
 
     /// <summary>
